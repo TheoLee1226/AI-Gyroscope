@@ -12,6 +12,12 @@ class simulation_dataset(Dataset):
             try:
                 self.data_loading = np.load('model_fitting\\dataset\\training_gyro_simulation_data.npz')
                 print("training_gyro_simulation_data.npz loaded")
+                self.mean = np.mean(self.data_loading['data'], axis=(0, 1))
+                self.std = np.std(self.data_loading['data'], axis=(0, 1))
+                data_normalized = (self.data_loading['data'] - self.mean) / self.std
+                print("Data normalized")
+                self.std[self.std == 0] = 1e-6
+                np.savez('model_fitting\\dataset\\gyro_simulation_data_normalization_parameter.npz', std =self.std, mean=self.mean)
             except FileNotFoundError:
                 print("training_gyro_simulation_data.npz not found")
                 return 
@@ -19,12 +25,22 @@ class simulation_dataset(Dataset):
             try:
                 self.data_loading = np.load('model_fitting\\dataset\\validation_gyro_simulation_data.npz')
                 print("validation_gyro_simulation_data.npz loaded")
+                try:
+                    normalization_parameter = np.load('model_fitting\\dataset\\gyro_simulation_data_normalization_parameter.npz')
+                    self.mean = normalization_parameter['mean']
+                    self.std = normalization_parameter['std']
+                    print("Normalization parameters loaded")
+                    data_normalized = (self.data_loading['data'] - self.mean) / self.std
+                    print("Data normalized")
+                except FileNotFoundError:
+                    print("Normalization parameters not found")
+                    return
             except FileNotFoundError:
                 print("validation_gyro_simulation_data.npz not found")
                 return
 
         print("Data shape: ", self.data_loading['data'].shape)
-        self.data_simulation = torch.tensor(self.data_loading['data'], dtype=torch.float32)
+        self.data_simulation = torch.tensor(data_normalized, dtype=torch.float32)
         print("Data simulation shape: ", self.data_simulation.shape)
         self.I = torch.tensor(self.data_loading['I'], dtype=torch.float32)
         print("I shape: ", self.I.shape)
@@ -53,7 +69,7 @@ class simulation_dataset(Dataset):
         D_X_0 = self.D_X_0[idx]
         return data_simulation, I, M, g, H, X_0, D_X_0  
 
-    def create_dataset(self ,total_time ,sample_num ,data_num, noise_level, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit):
+    def create_dataset(self ,total_time ,sample_num ,data_num, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit):
         I_1 = np.random.uniform(I_limit[0][0], I_limit[0][1], size=(data_num, 1))
         I_2 = np.random.uniform(I_limit[1][0], I_limit[1][1], size=(data_num, 1))
         I_3 = np.random.uniform(I_limit[2][0], I_limit[2][1], size=(data_num, 1))
@@ -83,13 +99,13 @@ class simulation_dataset(Dataset):
 
         return np.array(output), I, M, g, H, X_0, D_X_0
 
-    def create_training_dataset(self, total_time, sample_num, data_num, noise_level, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit):
+    def create_training_dataset(self, total_time, sample_num, data_num, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit):
         print("Creating training data...")
         data, I, M, g, H, X_0, D_X_0 = self.create_dataset(total_time, sample_num, data_num, noise_level, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit)
         np.savez('model_fitting\\dataset\\training_gyro_simulation_data.npz', data=data, I=I, M=M, g=g, H=H, X_0=X_0, D_X_0=D_X_0)
         print("Data saved to training_gyro_simulation_data.npz")
 
-    def create_validation_dataset(self, total_time, sample_num, data_num, noise_level, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit):
+    def create_validation_dataset(self, total_time, sample_num, data_num, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit):
         print("Creating validation data...")
         data, I, M, g, H, X_0, D_X_0 = self.create_dataset(total_time, sample_num, data_num, noise_level, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit)
         np.savez('model_fitting\\dataset\\validation_gyro_simulation_data.npz', data=data, I=I, M=M, g=g, H=H, X_0=X_0, D_X_0=D_X_0)
@@ -97,17 +113,17 @@ class simulation_dataset(Dataset):
 
 if __name__ == "__main__":
     dataset = simulation_dataset(train=True)
-    '''
-    dataset.create_training_data(total_time=10, sample_num=1000, data_num=10000, noise_level=0.01, 
+    
+    dataset.create_training_dataset(total_time=10, sample_num=1000, data_num=100000,
                                  I_limit=[(0.1, 0.5), (0.1, 0.5), (0.1, 0.5)], 
                                  M_limit=(0.1, 0.5), g_limit=(9.81, 9.81), H_limit=(0.1, 0.5), 
                                  X_0_limit=[(-np.pi/2, np.pi/2), (0, 0), (0, 0)], 
                                  D_X_0_limit=[(-1, 1), (-1, 1), (-1, 1)])
-    dataset.create_validation_data(total_time=10, sample_num=1000, data_num=10000, noise_level=0.01, 
+    dataset.create_validation_dataset(total_time=10, sample_num=1000, data_num=1000,
                                    I_limit=[(0.1, 0.5), (0.1, 0.5), (0.1, 0.5)], 
                                    M_limit=(0.1, 0.5), g_limit=(9.81, 9.81), H_limit=(0.1, 0.5), 
                                    X_0_limit=[(-np.pi/2, np.pi/2), (0, 0), (0, 0)], 
                                    D_X_0_limit=[(-1, 1), (-1, 1), (-1, 1)])
-    '''
+    
     
     
