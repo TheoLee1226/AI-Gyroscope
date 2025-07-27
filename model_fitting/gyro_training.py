@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 
 LEARNING_RATE = 0.001
-EPOCHS = 3
+EPOCHS = 2
 BATCH_SIZE = 128
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -23,14 +23,23 @@ print("Using device: ", DEVICE)
 print("Loading dataset...")
 try:
     train_dataset = dataset.simulation_dataset(train=True)
+    print(f"Training dataset size: {len(train_dataset)}")
+    if len(train_dataset) == 0:
+        print("Training dataset is empty! Please check if the data files exist and are accessible.")
+        exit()
 except FileNotFoundError:
     print("training_gyro_simulation_data.npz not found")
     exit()
 except Exception as e:
     print("Error loading training dataset: ", e)
     exit()
+
 try:
     validation_dataset = dataset.simulation_dataset(train=False)
+    print(f"Validation dataset size: {len(validation_dataset)}")
+    if len(validation_dataset) == 0:
+        print("Validation dataset is empty! Please check if the data files exist and are accessible.")
+        exit()
 except FileNotFoundError:
     print("validation_gyro_simulation_data.npz not found")
     exit()
@@ -80,14 +89,14 @@ for epoch in range(EPOCHS):
         outputs = gyro_model(inputs)
         loss = criterion(outputs, targets)
         loss.backward()
-        scheduler.step(loss)
         optimizer.step()
+        scheduler.step(loss)
 
         running_train_loss += loss.item()
         train_loss.append(loss.item())
         
     gyro_model.eval()
-    runing_validation_loss = 0.0
+    running_validation_loss = 0.0
 
     with torch.no_grad():
         for inputs, I, M, g, H, X_0, D_X_0 in validation_loader:
@@ -97,18 +106,17 @@ for epoch in range(EPOCHS):
             outputs = gyro_model(inputs)
             loss = criterion(outputs, targets)
 
-            runing_validation_loss += loss.item()
+            running_validation_loss += loss.item()
 
-        validation_loss.append(runing_validation_loss / len(validation_loader))
+        validation_loss.append(running_validation_loss / len(validation_loader))
 
-    print(f"Epoch {epoch+1}/{EPOCHS} [Validation] Average Loss: {running_train_loss / len(train_loader):.8f} | Validation Loss: {runing_validation_loss / len(validation_loader):.8f} | Learning Rate: {LEARNING_RATE:.8f}") 
-
+    print(f"Epoch {epoch+1}/{EPOCHS} [Validation] Average Loss: {running_train_loss / len(train_loader):.8f} | Validation Loss: {running_validation_loss / len(validation_loader):.8f} | Learning Rate: {optimizer.param_groups[0]['lr']:.8f}") 
 
 print("Training complete")
 print("Saving model...")
 
 final_validation_loss = 0
-
+gyro_model.eval()
 with torch.no_grad():
     for inputs, I, M, g, H, X_0, D_X_0 in validation_loader:
         inputs = inputs.to(DEVICE)
@@ -122,7 +130,7 @@ final_validation_loss /= len(validation_loader)
 print(f"Final Validation Loss: {final_validation_loss:.4f}")
 
 date_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-model_path = f"model_fitting\\models\\gyro_model_{date_time}.pth"
+model_path = f"model_fitting/models/gyro_model_{date_time}.pth"
 
 try:
     torch.save(gyro_model.state_dict(), model_path)
@@ -132,6 +140,7 @@ except Exception as e:
     exit()
 print("Model saved successfully")
 
+plt.figure(figsize=(12, 8))
 ax1 = plt.subplot(211)
 ax2 = plt.subplot(212)
 ax1.set_title('Training Loss')
@@ -144,4 +153,5 @@ ax1.plot(train_loss, label='Training Loss')
 ax2.plot(validation_loss, label='Validation Loss')
 ax1.legend()
 ax2.legend()
-plt.show()
+plt.savefig(f'model_fitting/plots/gyro_training_loss_{date_time}.png')
+print(f"Training loss plot saved to model_fitting/plots/gyro_training_loss_{date_time}.png")
