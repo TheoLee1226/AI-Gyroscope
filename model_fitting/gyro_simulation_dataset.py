@@ -101,13 +101,13 @@ class simulation_dataset(Dataset):
 
     def create_training_dataset(self, total_time, sample_num, data_num, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit):
         print("Creating training data...")
-        data, I, M, g, H, X_0, D_X_0 = self.create_dataset(total_time, sample_num, data_num, noise_level, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit)
+        data, I, M, g, H, X_0, D_X_0 = self.create_dataset(total_time, sample_num, data_num, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit)
         np.savez('model_fitting\\dataset\\training_gyro_simulation_data.npz', data=data, I=I, M=M, g=g, H=H, X_0=X_0, D_X_0=D_X_0)
         print("Data saved to training_gyro_simulation_data.npz")
 
     def create_validation_dataset(self, total_time, sample_num, data_num, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit):
         print("Creating validation data...")
-        data, I, M, g, H, X_0, D_X_0 = self.create_dataset(total_time, sample_num, data_num, noise_level, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit)
+        data, I, M, g, H, X_0, D_X_0 = self.create_dataset(total_time, sample_num, data_num, I_limit, M_limit, g_limit, H_limit, X_0_limit, D_X_0_limit)
         np.savez('model_fitting\\dataset\\validation_gyro_simulation_data.npz', data=data, I=I, M=M, g=g, H=H, X_0=X_0, D_X_0=D_X_0)
         print("Data saved to validation_gyro_simulation_data.npz")
 
