@@ -5,7 +5,7 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"使用裝置: {device}")
+print(f"Device: {device}")
 
 I_x, I_y, I_z = 1.0, 2.0, 3.0
 I = torch.tensor([I_x, I_y, I_z], device=device)
@@ -15,14 +15,12 @@ EPOCHS = 40000
 LAMBDA_PHYSICS = 0.1
 
 def get_ground_truth_torque_torch(t):
-    """PyTorch 版本的真實力矩函數"""
     tau_x = 0.5 * torch.sin(t * np.pi)
     tau_y = torch.zeros_like(t)
     tau_z = torch.full_like(t, -0.2)
     return torch.cat([tau_x, tau_y, tau_z], dim=1)
 
 def get_ground_truth_torque_np(t):
-    """NumPy 版本的真實力矩函數"""
     tau_x = 0.5 * np.sin(t * np.pi)
     tau_y = 0.0
     tau_z = -0.2
@@ -54,7 +52,6 @@ t_data = t_true[sample_indices]
 omega_data = omega_true[sample_indices]
 
 class OmegaNet(nn.Module):
-    """用於擬合角速度 omega(t) 的網絡"""
     def __init__(self):
         super(OmegaNet, self).__init__()
         self.net = nn.Sequential(
@@ -67,7 +64,6 @@ class OmegaNet(nn.Module):
         return self.net(t)
 
 class TorqueNet(nn.Module):
-    """用於擬合未知力矩 tau(t) 的網絡"""
     def __init__(self):
         super(TorqueNet, self).__init__()
         self.net = nn.Sequential(
@@ -128,6 +124,7 @@ print("訓練完成!")
 
 omega_net.eval()
 torque_net.eval()
+
 with torch.no_grad():
     omega_pred_final = omega_net(t_true).cpu().numpy()
     tau_pred_final = torque_net(t_true).cpu().numpy()
@@ -164,4 +161,4 @@ ax2.legend()
 ax2.grid(True)
 
 plt.tight_layout()
-plt.savefig("model_fitting_PINNs/plots/pinn_gyroscope_torque.png")
+plt.savefig("model_fitting_PINNs\\plots\\pinn_gyroscope_torque.png")
