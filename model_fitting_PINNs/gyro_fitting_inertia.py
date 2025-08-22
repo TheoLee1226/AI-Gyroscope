@@ -17,7 +17,7 @@ I_true_torch = torch.tensor([I_x, I_y, I_z], device=device, dtype=torch.float32)
 
 MASS = 0.5
 GRAVITY_ACCEL = -9.81
-r_cm_body = np.array([0.0, 0.1, 0.1])
+r_cm_body = np.array([0.1, 0.0, 0.0])
 g_lab = np.array([0.0, 0.0, GRAVITY_ACCEL])
 
 
@@ -57,7 +57,7 @@ def full_dynamics(t, y, Ix, Iy, Iz, m, g_vec_lab, r_cm):
     
     return np.concatenate((dw_dt, dq_dt))
 
-w0 = np.array([5.0, 1.0, 1.0])
+w0 = np.array([3.0, 1.0, 1.0])
 q0 = np.array([1.0, 0.0, 0.0, 0.0])
 y0 = np.concatenate((w0, q0))
 
